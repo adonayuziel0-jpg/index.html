@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atlas National Geographic</title>
+<style>
+  :root{
+    --ink:#152A3D;
+    --ink-2:#0E1D2B;
+    --parchment:#F3ECDC;
+    --parchment-2:#EAE1CB;
+    --brass:#D9A441;
+    --brass-dark:#B4842E;
+    --teal:#1F4E4A;
+    --teal-light:#2E6A64;
+    --clay:#B5442E;
+    --line: rgba(243,236,220,0.18);
+    --shadow: 0 18px 40px rgba(9,17,26,0.35);
+    --radius: 22px;
+    --font-display: Georgia, 'Times New Roman', serif;
+    --font-body: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:var(--font-body);
+    background:
+      radial-gradient(circle at 20% 10%, #1c3550 0%, transparent 45%),
+      radial-gradient(circle at 85% 85%, #10202f 0%, transparent 50%),
+      var(--ink-2);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:28px 14px;
+    color:var(--parchment);
+  }
+
+  /* ===== Phone frame (prototype shell) ===== */
+  .device{
+    width:390px;
+    max-width:100%;
+    height:820px;
+    max-height:94vh;
+    background:var(--ink);
+    border-radius:44px;
+    border:10px solid #0A1520;
+    box-shadow: var(--shadow), 0 0 0 1px rgba(217,164,65,0.15);
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  .device::before{ /* notch */
+    content:"";
+    position:absolute; top:0; left:50%; transform:translateX(-50%);
+    width:130px; height:22px; background:#0A1520; border-radius:0 0 16px 16px; z-index:50;
+  }
+  .statusbar{
+    height:34px; flex:0 0 auto;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 22px; font-size:11px; letter-spacing:.06em; color:var(--parchment-2);
+    font-family: var(--font-body); opacity:.8;
+  }
+
+  /* ===== Screen stack ===== */
+  .screens{ position:relative; flex:1 1 auto; overflow:hidden; }
+  .screen{
+    position:absolute; inset:0;
+    overflow-y:auto;
+    padding:18px 20px 100px;
+    opacity:0; transform:translateY(14px);
+    pointer-events:none;
+    transition: opacity .32s ease, transform .32s ease;
+  }
+  .screen.active{ opacity:1; transform:translateY(0); pointer-events:auto; }
+  .screen::-webkit-scrollbar{width:0;}
+
+  h1,h2,h3{ font-family:var(--font-display); margin:0 0 6px; color:var(--parchment); }
+  p{ line-height:1.5; color:var(--parchment-2); margin:0 0 10px;}
+  .eyebrow{
+    font-family:var(--font-body); text-transform:uppercase; letter-spacing:.18em;
+    font-size:10.5px; color:var(--brass); font-weight:700; margin-bottom:8px;
+  }
+
+  /* ===== Top bar within screens ===== */
+  .topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+  .icon-btn{
+    width:38px; height:38px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background: rgba(243,236,220,0.08); border:1px solid var(--line);
+    cursor:pointer; color:var(--parchment); flex:0 0 auto;
+  }
+  .icon-btn:hover{ background: rgba(217,164,65,0.18); }
+  .topbar-title{ font-family:var(--font-display); font-size:17px; letter-spacing:.02em; }
+
+  /* ===== Buttons ===== */
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    padding:14px 22px; border-radius:999px; border:none; cursor:pointer;
+    font-family:var(--font-body); font-weight:600; font-size:14px; letter-spacing:.02em;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:active{ transform:scale(.97); }
+  .btn-primary{ background:linear-gradient(135deg,var(--brass),var(--brass-dark)); color:#1a1206; box-shadow:0 10px 24px rgba(217,164,65,0.35);}
+  .btn-outline{ background:transparent; border:1px solid var(--line); color:var(--parchment); }
+  .btn-block{ width:100%; }
+
+  /* ===== Compass signature (Inicio) ===== */
+  .hero{
+    height:280px; border-radius:var(--radius); position:relative; overflow:hidden;
+    background:
+      radial-gradient(circle at 50% 40%, #23415f 0%, #16293c 60%, #0f1e2c 100%);
+    display:flex; align-items:center; justify-content:center; margin-bottom:22px;
+    border:1px solid var(--line);
+  }
+  .compass{ width:180px; height:180px; animation: spin 90s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .hero-badge{
+    position:absolute; bottom:14px; left:14px; right:14px;
+    background:rgba(14,29,43,0.72); backdrop-filter:blur(2px);
+    border:1px solid var(--line); border-radius:14px; padding:10px 14px;
+    font-size:11px; color:var(--parchment-2); letter-spacing:.04em;
+  }
+
+  .brandmark{ display:flex; align-items:center; gap:10px; margin-bottom:26px;}
+  .brandmark .sq{ width:34px;height:34px;border-radius:9px; background:linear-gradient(135deg,var(--brass),var(--clay)); display:flex;align-items:center;justify-content:center; font-family:var(--font-display); font-weight:700; color:#1a1206;}
+  .brandmark .wordmark{ font-family:var(--font-display); font-size:15px; letter-spacing:.08em; text-transform:uppercase;}
+  .brandmark .wordmark small{ display:block; font-family:var(--font-body); text-transform:none; letter-spacing:0; font-size:11px; color:var(--brass); font-weight:600;}
+
+  /* ===== Grid menu ===== */
+  .menu-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .menu-tile{
+    background:linear-gradient(160deg, rgba(243,236,220,0.06), rgba(243,236,220,0.02));
+    border:1px solid var(--line); border-radius:18px; padding:18px 14px;
+    cursor:pointer; transition: border-color .2s ease, transform .15s ease;
+    min-height:118px; display:flex; flex-direction:column; justify-content:space-between;
+  }
+  .menu-tile:hover{ border-color: var(--brass); transform:translateY(-2px); }
+  .menu-tile .ic{ font-size:22px; }
+  .menu-tile .lbl{ font-family:var(--font-display); font-size:15px; margin-top:10px; }
+  .menu-tile .sub{ font-size:11px; color:var(--parchment-2); opacity:.75; }
+
+  /* ===== Cards (continents, countries) ===== */
+  .card-row{ display:flex; flex-direction:column; gap:12px; }
+  .card{
+    display:flex; align-items:center; gap:14px;
+    background: rgba(243,236,220,0.05); border:1px solid var(--line);
+    border-radius:16px; padding:12px 14px; cursor:pointer;
+    transition: border-color .2s ease, background .2s ease;
+  }
+  .card:hover{ border-color:var(--brass); background:rgba(217,164,65,0.08); }
+  .card .thumb{
+    width:52px; height:52px; border-radius:12px; flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center; font-size:24px;
+    background: linear-gradient(135deg, var(--teal), var(--teal-light));
+    border:1px solid var(--line);
+    overflow:hidden;
+  }
+  .flag-ico{
+    width:100%; height:100%; object-fit:cover; border-radius:12px;
+  }
+  .detail-hero .flag-ico{ width:96px; height:96px; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.35); }
+  .card .txt{ flex:1; min-width:0; }
+  .card .txt .t{ font-family:var(--font-display); font-size:15px; }
+  .card .txt .s{ font-size:11.5px; color:var(--parchment-2); opacity:.75; }
+  .card .chev{ opacity:.5; font-size:14px; }
+
+  .section-label{ font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--brass); font-weight:700; margin:20px 0 10px; }
+  .section-label:first-of-type{ margin-top:0; }
+
+  /* ===== Filter chips ===== */
+  .chip-row{ display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:16px; }
+  .chip{
+    flex:0 0 auto; padding:8px 14px; border-radius:999px; border:1px solid var(--line);
+    font-size:12.5px; cursor:pointer; color:var(--parchment-2); background:transparent;
+    white-space:nowrap;
+  }
+  .chip.active{ background:var(--brass); border-color:var(--brass); color:#1a1206; font-weight:700; }
+
+  /* ===== Carousel (fauna) ===== */
+  .carousel{ display:flex; gap:12px; overflow-x:auto; scroll-snap-type:x mandatory; margin:0 -20px 6px; padding:0 20px 10px; }
+  .carousel::-webkit-scrollbar{ height:5px; }
+  .carousel::-webkit-scrollbar-thumb{ background:var(--brass); border-radius:4px;}
+  .fauna-card{
+    scroll-snap-align:start; flex:0 0 148px; background:rgba(243,236,220,0.05);
+    border:1px solid var(--line); border-radius:16px; padding:12px; cursor:pointer;
+    transition:transform .15s ease, border-color .2s ease;
+  }
+  .fauna-card:hover{ transform:translateY(-3px); border-color:var(--brass); }
+  .fauna-card .art{ width:100%; height:90px; border-radius:10px; background:linear-gradient(135deg,var(--teal),#12302c); display:flex; align-items:center; justify-content:center; font-size:34px; margin-bottom:8px;}
+  .fauna-card .n{ font-family:var(--font-display); font-size:13.5px; }
+  .fauna-card .c{ font-size:10.5px; color:var(--brass); text-transform:uppercase; letter-spacing:.05em; }
+
+  /* ===== Search ===== */
+  .search-box{
+    display:flex; align-items:center; gap:10px; background:rgba(243,236,220,0.07);
+    border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:16px;
+  }
+  .search-box input{
+    flex:1; background:transparent; border:none; outline:none; color:var(--parchment);
+    font-family:var(--font-body); font-size:14.5px;
+  }
+  .search-box input::placeholder{ color:rgba(243,236,220,0.45); }
+  .empty-state{ text-align:center; padding:40px 10px; color:var(--parchment-2); opacity:.7; font-size:13px; }
+
+  /* ===== Detail screen ===== */
+  .detail-hero{ height:190px; border-radius:18px; background:linear-gradient(135deg,var(--teal),#12302c); display:flex; align-items:center; justify-content:center; font-size:64px; margin-bottom:16px; border:1px solid var(--line);}
+  .stat-row{ display:flex; gap:10px; margin:14px 0; }
+  .stat{ flex:1; background:rgba(243,236,220,0.05); border:1px solid var(--line); border-radius:12px; padding:10px 12px; }
+  .stat .v{ font-family:var(--font-display); font-size:16px; }
+  .stat .k{ font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--brass); }
+
+  /* ===== About screen ===== */
+  .about-card{ background:rgba(243,236,220,0.05); border:1px solid var(--line); border-radius:18px; padding:20px; }
+  .about-card .field{ margin-bottom:14px; }
+  .about-card .field label{ display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--brass); margin-bottom:4px; }
+  .about-card .field div{ font-family:var(--font-display); font-size:15px; }
+
+  /* ===== Bottom nav ===== */
+  .bottomnav{
+    position:absolute; left:12px; right:12px; bottom:14px; z-index:40;
+    background:rgba(14,29,43,0.85); backdrop-filter:blur(8px);
+    border:1px solid var(--line); border-radius:20px;
+    display:flex; justify-content:space-around; padding:10px 4px;
+    box-shadow:0 12px 30px rgba(0,0,0,0.4);
+  }
+  .navbtn{ background:none; border:none; color:var(--parchment-2); display:flex; flex-direction:column; align-items:center; gap:4px; font-size:9.5px; cursor:pointer; opacity:.65; letter-spacing:.02em; }
+  .navbtn .ic{ font-size:17px; }
+  .navbtn.active{ opacity:1; color:var(--brass); }
+
+  /* ===== Side drawer (menú lateral desplegable) ===== */
+  .drawer-overlay{
+    position:absolute; inset:0; background:rgba(9,17,26,0.55);
+    opacity:0; pointer-events:none; transition:opacity .25s ease; z-index:60;
+  }
+  .drawer-overlay.open{ opacity:1; pointer-events:auto; }
+  .drawer{
+    position:absolute; top:0; bottom:0; left:0; width:76%;
+    background:var(--ink-2); border-right:1px solid var(--line);
+    transform:translateX(-105%); transition:transform .3s ease; z-index:61;
+    padding:26px 18px; overflow-y:auto;
+  }
+  .drawer.open{ transform:translateX(0); }
+  .drawer-item{
+    display:flex; align-items:center; gap:12px; padding:12px 10px; border-radius:12px;
+    cursor:pointer; color:var(--parchment); font-size:14px; margin-bottom:4px;
+  }
+  .drawer-item:hover{ background:rgba(217,164,65,0.12); }
+  .drawer-item .ic{ font-size:16px; width:22px; text-align:center; }
+
+  /* ===== Modal (ventana emergente) ===== */
+  .modal-overlay{
+    position:absolute; inset:0; background:rgba(9,17,26,0.65); z-index:70;
+    display:flex; align-items:flex-end; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity .25s ease;
+  }
+  .modal-overlay.open{ opacity:1; pointer-events:auto; }
+  .modal{
+    width:100%; background:var(--ink); border-radius:26px 26px 0 0; border:1px solid var(--line);
+    padding:22px 22px 30px; transform:translateY(24px); transition:transform .3s ease;
+    max-height:78%; overflow-y:auto;
+  }
+  .modal-overlay.open .modal{ transform:translateY(0); }
+  .modal-handle{ width:40px; height:4px; background:var(--line); border-radius:4px; margin:0 auto 16px; }
+
+  /* ===== Map (mapa interactivo simplificado) ===== */
+  .map-wrap{ background:rgba(243,236,220,0.05); border:1px solid var(--line); border-radius:18px; padding:16px; margin-bottom:16px; }
+  .map-svg circle{ cursor:pointer; transition: r .15s ease; }
+  .map-svg circle:hover{ r:9; }
+
+  .toast{
+    position:absolute; left:50%; bottom:92px; transform:translateX(-50%) translateY(20px);
+    background:var(--brass); color:#1a1206; padding:9px 18px; border-radius:999px;
+    font-size:12.5px; font-weight:700; opacity:0; transition:opacity .25s ease, transform .25s ease;
+    pointer-events:none; z-index:80; white-space:nowrap;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .helper-note{ text-align:center; font-size:10.5px; color:var(--parchment-2); opacity:.55; margin-top:18px; }
+</style>
+</head>
+<body>
+
+<div class="device" id="device">
+  <div class="statusbar"><span>9:41</span><span>Atlas National Geographic</span></div>
+
+  <div class="screens" id="screens">
+
+    <!-- ============ 1. INICIO ============ -->
+    <section class="screen active" data-screen="inicio">
+      <div class="brandmark">
+        <div class="sq">A</div>
+        <div class="wordmark">Atlas<small>National Geographic — Edición Escolar</small></div>
+      </div>
+
+      <div class="hero">
+        <svg class="compass" viewBox="0 0 200 200">
+          <circle cx="100" cy="100" r="92" fill="none" stroke="#D9A441" stroke-width="1.2" opacity="0.55"/>
+          <circle cx="100" cy="100" r="70" fill="none" stroke="#D9A441" stroke-width="1" opacity="0.35"/>
+          <g fill="#D9A441" opacity="0.9">
+            <text x="100" y="20" text-anchor="middle" font-family="Georgia" font-size="13">N</text>
+            <text x="100" y="188" text-anchor="middle" font-family="Georgia" font-size="13">S</text>
+            <text x="14" y="105" text-anchor="middle" font-family="Georgia" font-size="13">O</text>
+            <text x="186" y="105" text-anchor="middle" font-family="Georgia" font-size="13">E</text>
+          </g>
+          <polygon points="100,38 112,100 100,162 88,100" fill="#F3ECDC" opacity="0.9"/>
+          <polygon points="38,100 100,88 162,100 100,112" fill="#B5442E" opacity="0.85"/>
+          <circle cx="100" cy="100" r="6" fill="#0E1D2B" stroke="#D9A441" stroke-width="1.5"/>
+        </svg>
+        <div class="hero-badge">Explora continentes, países, culturas, fauna y maravillas naturales — de forma interactiva.</div>
+      </div>
+
+      <h1 style="font-size:24px;">Bienvenido, explorador</h1>
+      <p>Esta aplicación te invita a recorrer el planeta a través de un atlas digital: descubre países, especies representativas y maravillas del mundo natural.</p>
+      <button class="btn btn-primary btn-block" style="margin-top:18px;" onclick="goTo('menu')">🧭 Explorar Atlas</button>
+    </section>
+
+    <!-- ============ 2. MENÚ PRINCIPAL ============ -->
+    <section class="screen" data-screen="menu">
+      <div class="topbar">
+        <button class="icon-btn" onclick="openDrawer()">☰</button>
+        <div class="topbar-title">Menú Principal</div>
+        <button class="icon-btn" onclick="goTo('busqueda')">🔍</button>
+      </div>
+      <p class="eyebrow">¿A dónde quieres ir?</p>
+      <div class="menu-grid">
+        <div class="menu-tile" onclick="goTo('continentes')">
+          <div class="ic">🗺️</div>
+          <div><div class="lbl">Países</div><div class="sub">6 continentes · 24 países</div></div>
+        </div>
+        <div class="menu-tile" onclick="goTo('fauna')">
+          <div class="ic">🦁</div>
+          <div><div class="lbl">Fauna</div><div class="sub">Especies representativas</div></div>
+        </div>
+        <div class="menu-tile" onclick="goTo('maravillas')">
+          <div class="ic">🏔️</div>
+          <div><div class="lbl">Maravillas Naturales</div><div class="sub">Paisajes icónicos</div></div>
+        </div>
+        <div class="menu-tile" onclick="goTo('busqueda')">
+          <div class="ic">🔍</div>
+          <div><div class="lbl">Búsqueda</div><div class="sub">Encuentra al instante</div></div>
+        </div>
+        <div class="menu-tile" onclick="goTo('mapa')">
+          <div class="ic">📍</div>
+          <div><div class="lbl">Mapa Interactivo</div><div class="sub">Explora por ubicación</div></div>
+        </div>
+        <div class="menu-tile" onclick="goTo('acerca')">
+          <div class="ic">ℹ️</div>
+          <div><div class="lbl">Acerca de</div><div class="sub">Sobre el proyecto</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 3. CONTINENTES ============ -->
+    <section class="screen" data-screen="continentes">
+      <div class="topbar">
+        <button class="icon-btn" onclick="goTo('menu')">←</button>
+        <div class="topbar-title">Continentes</div>
+        <button class="icon-btn" onclick="openDrawer()">☰</button>
+      </div>
+      <p class="eyebrow">Selecciona un continente</p>
+      <div class="card-row" id="continentList"></div>
+    </section>
+
+    <!-- ============ 4. PAÍSES ============ -->
+    <section class="screen" data-screen="paises">
+      <div class="topbar">
+        <button class="icon-btn" onclick="goTo('continentes')">←</button>
+        <div class="topbar-title" id="paisesTitle">Países</div>
+        <button class="icon-btn" onclick="openDrawer()">☰</button>
+      </div>
+      <p class="eyebrow" id="paisesSub">Continente seleccionado</p>
+      <div class="card-row" id="countryList"></div>
+    </section>
+
+    <!-- ============ 5. INFORMACIÓN DETALLADA ============ -->
+    <section class="screen" data-screen="detalle">
+      <div class="topbar">
+        <button class="icon-btn" onclick="goBack()">←</button>
+        <div class="topbar-title">Ficha</div>
+        <button class="icon-btn" onclick="openDrawer()">☰</button>
+      </div>
+      <div class="detail-hero" id="detailHero">🌍</div>
+      <p class="eyebrow" id="detailKind">País</p>
+      <h1 id="detailName" style="font-size:22px;">—</h1>
+      <p id="detailDesc">—</p>
+      <div class="stat-row" id="detailStats"></div>
+    </section>
+
+    <!-- ============ 6. FAUNA ============ -->
+    <section class="screen" data-screen="fauna">
+      <div class="topbar">
+        <button class="icon-btn" onclick="goTo('menu')">←</button>
+        <div class="topbar-title">Fauna</div>
+        <button class="icon-btn" onclick="openDrawer()">☰</button>
+      </div>
+      <p class="eyebrow">Filtrar por continente</p>
+      <div class="chip-row" id="faunaFilters"></div>
+      <div class="card-row" id="faunaList"></div>
+    </section>
+
+    <!-- ============ 7. MARAVILLAS NATURALES ============ -->
+    <section class="screen" data-screen="maravillas">
+      <div class="topbar">
+        <button class="icon-btn" onclick="goTo('menu')">←</button>
+        <div class="topbar-title">Maravillas Naturales</div>
+        <button class="icon-btn" onclick="openDrawer()">☰</button>
+      </div>
+      <p class="eyebrow">Desliza para descubrir</p>
+      <div class="carousel" id="wondersCarousel"></div>
+      <div class="card-row" id="wondersList" style="margin-top:6px;"></div>
+    </section>
+
+    <!-- ============ 8. MAPA INTERACTIVO ============ -->
+    <section class="screen" data-screen="mapa">
+      <div class="topbar">
+        <button class="icon-btn" onclick="goTo('menu')">←</button>
+        <div class="topbar-title">Mapa Interactivo</div>
+        <button class="icon-btn" onclick="openDrawer()">☰</button>
+      </div>
+      <p class="eyebrow">Toca un punto para ver el continente</p>
+      <div class="map-wrap">
+        <svg class="map-svg" viewBox="0 0 320 190" width="100%" height="200">
+          <rect x="0" y="0" width="320" height="190" rx="14" fill="#0F1E2C"/>
+          <path d="M20 70 Q40 40 70 55 Q90 40 110 60 Q100 90 80 110 Q60 130 40 110 Q20 100 20 70Z" fill="#1F4E4A" opacity="0.6"/>
+          <path d="M140 40 Q170 30 190 50 Q185 75 160 80 Q140 65 140 40Z" fill="#1F4E4A" opacity="0.6"/>
+          <path d="M150 85 Q185 80 200 110 Q190 145 160 150 Q140 120 150 85Z" fill="#1F4E4A" opacity="0.6"/>
+          <path d="M210 45 Q260 35 290 60 Q270 90 235 85 Q210 70 210 45Z" fill="#1F4E4A" opacity="0.6"/>
+          <path d="M245 100 Q275 95 285 120 Q265 135 245 125Z" fill="#1F4E4A" opacity="0.6"/>
+          <rect x="10" y="160" width="300" height="18" rx="6" fill="#1F4E4A" opacity="0.4"/>
+          <g id="mapPoints"></g>
+        </svg>
+      </div>
+      <div class="card-row" id="mapLegend"></div>
+    </section>
+
+    <!-- ============ 9. BÚSQUEDA ============ -->
+    <section class="screen" data-screen="busqueda">
+      <div class="topbar">
+        <button class="icon-btn" onclick="goTo('menu')">←</button>
+        <div class="topbar-title">Búsqueda</div>
+        <button class="icon-btn" onclick="openDrawer()">☰</button>
+      </div>
+      <div class="search-box">
+        <span>🔍</span>
+        <input id="searchInput" type="text" placeholder="Buscar país, continente o especie..." oninput="onSearch()">
+      </div>
+      <div id="searchResults"></div>
+    </section>
+
+    <!-- ============ 10. ACERCA DE ============ -->
+    <section class="screen" data-screen="acerca">
+      <div class="topbar">
+        <button class="icon-btn" onclick="goTo('menu')">←</button>
+        <div class="topbar-title">Acerca de</div>
+        <button class="icon-btn" onclick="openDrawer()">☰</button>
+      </div>
+      <div class="about-card">
+        <div class="field"><label>Proyecto</label><div>Atlas National Geographic</div></div>
+        <div class="field"><label>Módulo</label><div>Actividad de Recuperación — III Periodo · Módulo 3.8</div></div>
+        <div class="field"><label>Estudiante</label><div id="studentName">Uziel Adonay Alemán Molina</div></div>
+        <div class="field"><label>Docente</label><div>Denisse Alvarado</div></div>
+        <div class="field"><label>Descripción</label><div style="font-family:var(--font-body); font-size:13.5px; font-weight:400; color:var(--parchment-2); line-height:1.6;">
+          Aplicación educativa tipo atlas digital que permite explorar continentes, países, culturas, fauna y maravillas naturales del mundo mediante una interfaz interactiva, con navegación entre pantallas, búsqueda dinámica, filtros, carrusel, mapa y ventanas emergentes.
+        </div></div>
+      </div>
+      <p class="helper-note">Prototipo desarrollado con HTML, CSS y JavaScript.</p>
+    </section>
+
+  </div>
+
+  <!-- Bottom navigation -->
+  <div class="bottomnav" id="bottomnav">
+    <button class="navbtn" data-nav="menu" onclick="goTo('menu')"><span class="ic">🏠</span>Inicio</button>
+    <button class="navbtn" data-nav="continentes" onclick="goTo('continentes')"><span class="ic">🗺️</span>Países</button>
+    <button class="navbtn" data-nav="fauna" onclick="goTo('fauna')"><span class="ic">🦁</span>Fauna</button>
+    <button class="navbtn" data-nav="busqueda" onclick="goTo('busqueda')"><span class="ic">🔍</span>Buscar</button>
+    <button class="navbtn" data-nav="acerca" onclick="goTo('acerca')"><span class="ic">ℹ️</span>Acerca</button>
+  </div>
+
+  <!-- Side drawer -->
+  <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+  <div class="drawer" id="drawer">
+    <div class="brandmark" style="margin-bottom:22px;">
+      <div class="sq">A</div>
+      <div class="wordmark">Atlas<small>Menú lateral</small></div>
+    </div>
+    <div class="drawer-item" onclick="goTo('inicio')"><span class="ic">🏠</span>Pantalla de Inicio</div>
+    <div class="drawer-item" onclick="goTo('menu')"><span class="ic">☰</span>Menú Principal</div>
+    <div class="drawer-item" onclick="goTo('continentes')"><span class="ic">🗺️</span>Continentes / Países</div>
+    <div class="drawer-item" onclick="goTo('fauna')"><span class="ic">🦁</span>Fauna</div>
+    <div class="drawer-item" onclick="goTo('maravillas')"><span class="ic">🏔️</span>Maravillas Naturales</div>
+    <div class="drawer-item" onclick="goTo('mapa')"><span class="ic">📍</span>Mapa Interactivo</div>
+    <div class="drawer-item" onclick="goTo('busqueda')"><span class="ic">🔍</span>Búsqueda</div>
+    <div class="drawer-item" onclick="goTo('acerca')"><span class="ic">ℹ️</span>Acerca de</div>
+  </div>
+
+  <!-- Modal (ventana emergente) -->
+  <div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div style="font-size:44px; margin-bottom:8px;" id="modalIcon">🦁</div>
+      <p class="eyebrow" id="modalKind">Especie</p>
+      <h2 id="modalTitle">—</h2>
+      <p id="modalBody">—</p>
+      <button class="btn btn-outline btn-block" onclick="closeModal()">Cerrar</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+/* ================= DATA ================= */
+const CONTINENTS = [
+  {id:'america', name:'América', icon:'🌎', desc:'Del Ártico a la Patagonia: selvas, desiertos y grandes cordilleras.',
+    countries:[
+      {name:'México', cap:'Ciudad de México', lang:'Español', icon:'🇲🇽', iso:'mx', desc:'Cuna de civilizaciones mesoamericanas, con desiertos al norte y selvas al sur.'},
+      {name:'Brasil', cap:'Brasilia', lang:'Portugués', icon:'🇧🇷', iso:'br', desc:'Hogar de la selva amazónica, la mayor reserva de biodiversidad del planeta.'},
+      {name:'Canadá', cap:'Ottawa', lang:'Inglés/Francés', icon:'🇨🇦', iso:'ca', desc:'Vastos bosques boreales y una de las costas más extensas del mundo.'},
+      {name:'El Salvador', cap:'San Salvador', lang:'Español', icon:'🇸🇻', iso:'sv', desc:'El país más pequeño de Centroamérica, con volcanes, lagos y costa pacífica.'}
+    ]},
+  {id:'europa', name:'Europa', icon:'🏛️', desc:'Un mosaico de culturas antiguas, alpes nevados y costas mediterráneas.',
+    countries:[
+      {name:'España', cap:'Madrid', lang:'Español', icon:'🇪🇸', iso:'es', desc:'Costas mediterráneas, meseta central y una rica herencia histórica.'},
+      {name:'Francia', cap:'París', lang:'Francés', icon:'🇫🇷', iso:'fr', desc:'Desde los Alpes hasta la costa atlántica, cuna del arte y la gastronomía.'},
+      {name:'Italia', cap:'Roma', lang:'Italiano', icon:'🇮🇹', iso:'it', desc:'Una península rodeada de mar, con volcanes activos y ciudades milenarias.'},
+      {name:'Noruega', cap:'Oslo', lang:'Noruego', icon:'🇳🇴', iso:'no', desc:'Fiordos escarpados y auroras boreales en el extremo norte de Europa.'}
+    ]},
+  {id:'asia', name:'Asia', icon:'⛩️', desc:'El continente más grande y poblado, de estepas heladas a selvas tropicales.',
+    countries:[
+      {name:'Japón', cap:'Tokio', lang:'Japonés', icon:'🇯🇵', iso:'jp', desc:'Archipiélago volcánico que combina tradición milenaria y tecnología.'},
+      {name:'China', cap:'Pekín', lang:'Mandarín', icon:'🇨🇳', iso:'cn', desc:'Desde el desierto de Gobi hasta las montañas del Himalaya.'},
+      {name:'India', cap:'Nueva Delhi', lang:'Hindi/Inglés', icon:'🇮🇳', iso:'in', desc:'Subcontinente de monzones, cordilleras y una enorme diversidad cultural.'},
+      {name:'Tailandia', cap:'Bangkok', lang:'Tailandés', icon:'🇹🇭', iso:'th', desc:'Selvas tropicales, islas y templos budistas en el sureste asiático.'}
+    ]},
+  {id:'africa', name:'África', icon:'🌍', desc:'Sabanas infinitas, el desierto más grande y una fauna icónica.',
+    countries:[
+      {name:'Egipto', cap:'El Cairo', lang:'Árabe', icon:'🇪🇬', iso:'eg', desc:'El Nilo atraviesa el desierto del Sahara, cuna de una civilización antigua.'},
+      {name:'Kenia', cap:'Nairobi', lang:'Suajili/Inglés', icon:'🇰🇪', iso:'ke', desc:'Sabanas del Gran Valle del Rift, hogar de grandes migraciones animales.'},
+      {name:'Sudáfrica', cap:'Pretoria', lang:'11 idiomas oficiales', icon:'🇿🇦', iso:'za', desc:'Donde se encuentran el océano Atlántico e Índico, con paisajes muy diversos.'},
+      {name:'Marruecos', cap:'Rabat', lang:'Árabe/Bereber', icon:'🇲🇦', iso:'ma', desc:'Entre el Atlas y el Sahara, con costas atlántica y mediterránea.'}
+    ]},
+  {id:'oceania', name:'Oceanía', icon:'🏝️', desc:'Miles de islas dispersas en el Pacífico, con arrecifes y ecosistemas únicos.',
+    countries:[
+      {name:'Australia', cap:'Canberra', lang:'Inglés', icon:'🇦🇺', iso:'au', desc:'Un continente-isla con desiertos rojos y el mayor arrecife de coral del mundo.'},
+      {name:'Nueva Zelanda', cap:'Wellington', lang:'Inglés/Maorí', icon:'🇳🇿', iso:'nz', desc:'Fiordos, glaciares y volcanes en dos islas principales del Pacífico sur.'},
+      {name:'Fiyi', cap:'Suva', lang:'Inglés/Fiyiano', icon:'🇫🇯', iso:'fj', desc:'Más de 300 islas volcánicas y de coral en el Pacífico sur.'},
+      {name:'Papúa Nueva Guinea', cap:'Port Moresby', lang:'Tok Pisin', icon:'🇵🇬', iso:'pg', desc:'Una de las mayores biodiversidades del planeta en selvas montañosas.'}
+    ]},
+  {id:'antartida', name:'Antártida', icon:'🧊', desc:'El continente más frío, ventoso y árido, cubierto casi en su totalidad de hielo.',
+    countries:[
+      {name:'Base Esperanza', cap:'Argentina (base)', lang:'Español', icon:'🏕️', desc:'Una de las estaciones científicas habitadas todo el año en el continente.'},
+      {name:'Base McMurdo', cap:'EE.UU. (base)', lang:'Inglés', icon:'🏕️', desc:'La estación de investigación más grande de la Antártida.'},
+      {name:'Península Antártica', cap:'—', lang:'—', icon:'🏔️', desc:'La región más cálida y visitada del continente helado.'}
+    ]}
+];
+
+const FAUNA = [
+  {name:'León', continent:'africa', icon:'🦁', desc:'El "rey de la sabana" vive en manadas y es el gran depredador de las llanuras africanas.'},
+  {name:'Panda Gigante', continent:'asia', icon:'🐼', desc:'Nativo de los bosques de bambú de China central; símbolo mundial de la conservación.'},
+  {name:'Águila Calva', continent:'america', icon:'🦅', desc:'Ave rapaz emblemática de América del Norte, símbolo de fuerza y libertad.'},
+  {name:'Canguro Rojo', continent:'oceania', icon:'🦘', desc:'El marsupial más grande del mundo, adaptado a las llanuras áridas de Australia.'},
+  {name:'Pingüino Emperador', continent:'antartida', icon:'🐧', desc:'Resiste temperaturas extremas y es el pingüino más grande del planeta.'},
+  {name:'Oso Polar', continent:'antartida', icon:'🐻‍❄️', desc:'Depredador tope del Ártico, adaptado a la vida sobre el hielo marino.'},
+  {name:'Elefante Africano', continent:'africa', icon:'🐘', desc:'El mamífero terrestre más grande, clave para el equilibrio de su ecosistema.'},
+  {name:'Tigre de Bengala', continent:'asia', icon:'🐅', desc:'El felino más grande de Asia, habitante de selvas y manglares.'},
+  {name:'Jaguar', continent:'america', icon:'🐆', desc:'El felino más grande de América, con hábitat en la selva amazónica.'},
+  {name:'Koala', continent:'oceania', icon:'🐨', desc:'Marsupial arbóreo australiano que se alimenta casi exclusivamente de eucalipto.'},
+  {name:'Lobo Ibérico', continent:'europa', icon:'🐺', desc:'Uno de los últimos grandes depredadores salvajes de Europa occidental.'},
+  {name:'Reno', continent:'europa', icon:'🦌', desc:'Adaptado a la tundra ártica del norte de Europa, vive en grandes manadas.'}
+];
+
+const WONDERS = [
+  {name:'Gran Cañón', continent:'america', icon:'🏜️', desc:'Formación geológica tallada por el río Colorado a lo largo de millones de años.'},
+  {name:'Cataratas Victoria', continent:'africa', icon:'💦', desc:'Una de las cataratas más grandes del mundo, en la frontera de Zambia y Zimbabue.'},
+  {name:'Monte Everest', continent:'asia', icon:'🏔️', desc:'La montaña más alta del planeta, en la cordillera del Himalaya.'},
+  {name:'Gran Barrera de Coral', continent:'oceania', icon:'🪸', desc:'El sistema de arrecifes de coral más grande del mundo, visible desde el espacio.'},
+  {name:'Auroras Boreales', continent:'europa', icon:'🌌', desc:'Fenómeno luminoso visible en los cielos nórdicos durante el invierno.'},
+  {name:'Glaciar Perito Moreno', continent:'antartida', icon:'🧊', desc:'Uno de los pocos glaciares del mundo en equilibrio, cerca de la Antártida.'}
+];
+
+const CONT_BY_ID = Object.fromEntries(CONTINENTS.map(c=>[c.id,c]));
+const MAP_POS = { america:{x:60,y:80}, europa:{x:165,y:55}, africa:{x:175,y:110}, asia:{x:235,y:60}, oceania:{x:265,y:115}, antartida:{x:160,y:175} };
+
+/* Renders a real flag image (flagcdn.com) with the emoji as offline fallback */
+function flagTag(country, size){
+  if(!country.iso) return country.icon;
+  return `<img class="flag-ico" src="https://flagcdn.com/w160/${country.iso}.png"
+            alt="Bandera de ${country.name}"
+            onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'${country.icon}'}))">`;
+}
+
+/* ================= NAV STATE ================= */
+let history = ['inicio'];
+let currentContinent = null;
+
+function goTo(screen, opts={}){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const target = document.querySelector(`.screen[data-screen="${screen}"]`);
+  if(target) target.classList.add('active');
+  if(history[history.length-1] !== screen) history.push(screen);
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active', b.dataset.nav===screen));
+  closeDrawer();
+  if(screen==='continentes') renderContinents();
+  if(screen==='fauna') renderFauna();
+  if(screen==='maravillas') renderWonders();
+  if(screen==='mapa') renderMap();
+  document.querySelector(`.screen[data-screen="${screen}"]`).scrollTop = 0;
+}
+function goBack(){
+  history.pop();
+  const prev = history[history.length-1] || 'menu';
+  history.pop();
+  goTo(prev);
+}
+
+/* ================= RENDER: CONTINENTES ================= */
+function renderContinents(){
+  const list = document.getElementById('continentList');
+  list.innerHTML = CONTINENTS.map(c=>`
+    <div class="card" onclick="openContinent('${c.id}')">
+      <div class="thumb">${c.icon}</div>
+      <div class="txt"><div class="t">${c.name}</div><div class="s">${c.desc}</div></div>
+      <div class="chev">›</div>
+    </div>`).join('');
+}
+function openContinent(id){
+  currentContinent = id;
+  const c = CONT_BY_ID[id];
+  document.getElementById('paisesTitle').textContent = c.name;
+  document.getElementById('paisesSub').textContent = `${c.countries.length} países destacados`;
+  const list = document.getElementById('countryList');
+  list.innerHTML = c.countries.map((co,i)=>`
+    <div class="card" onclick="openCountryDetail('${id}',${i})">
+      <div class="thumb">${flagTag(co)}</div>
+      <div class="txt"><div class="t">${co.name}</div><div class="s">Capital: ${co.cap}</div></div>
+      <div class="chev">›</div>
+    </div>`).join('');
+  goTo('paises');
+}
+function openCountryDetail(contId, idx){
+  const c = CONT_BY_ID[contId];
+  const co = c.countries[idx];
+  document.getElementById('detailHero').innerHTML = flagTag(co);
+  document.getElementById('detailKind').textContent = `País · ${c.name}`;
+  document.getElementById('detailName').textContent = co.name;
+  document.getElementById('detailDesc').textContent = co.desc;
+  document.getElementById('detailStats').innerHTML = `
+    <div class="stat"><div class="v">${co.cap}</div><div class="k">Capital</div></div>
+    <div class="stat"><div class="v">${co.lang}</div><div class="k">Idioma</div></div>`;
+  goTo('detalle');
+}
+
+/* ================= RENDER: FAUNA ================= */
+let faunaFilter = 'todos';
+function renderFauna(){
+  const filters = document.getElementById('faunaFilters');
+  const chips = [{id:'todos',name:'Todos'}, ...CONTINENTS.map(c=>({id:c.id,name:c.name}))];
+  filters.innerHTML = chips.map(ch=>`
+    <div class="chip ${faunaFilter===ch.id?'active':''}" onclick="setFaunaFilter('${ch.id}')">${ch.name}</div>`).join('');
+  const items = FAUNA.filter(f=> faunaFilter==='todos' || f.continent===faunaFilter);
+  const list = document.getElementById('faunaList');
+  if(items.length===0){ list.innerHTML = `<div class="empty-state">No hay especies para este filtro.</div>`; return; }
+  list.innerHTML = items.map(f=>`
+    <div class="card" onclick="openFaunaModal('${f.name}')">
+      <div class="thumb">${f.icon}</div>
+      <div class="txt"><div class="t">${f.name}</div><div class="s">${CONT_BY_ID[f.continent].name}</div></div>
+      <div class="chev">›</div>
+    </div>`).join('');
+}
+function setFaunaFilter(id){ faunaFilter = id; renderFauna(); }
+function openFaunaModal(name){
+  const f = FAUNA.find(x=>x.name===name);
+  document.getElementById('modalIcon').textContent = f.icon;
+  document.getElementById('modalKind').textContent = `Fauna · ${CONT_BY_ID[f.continent].name}`;
+  document.getElementById('modalTitle').textContent = f.name;
+  document.getElementById('modalBody').textContent = f.desc;
+  openModal();
+}
+
+/* ================= RENDER: MARAVILLAS (carrusel) ================= */
+function renderWonders(){
+  const carousel = document.getElementById('wondersCarousel');
+  carousel.innerHTML = WONDERS.map(w=>`
+    <div class="fauna-card" onclick="openWonderModal('${w.name}')">
+      <div class="art">${w.icon}</div>
+      <div class="n">${w.name}</div>
+      <div class="c">${CONT_BY_ID[w.continent].name}</div>
+    </div>`).join('');
+  const list = document.getElementById('wondersList');
+  list.innerHTML = WONDERS.map(w=>`
+    <div class="card" onclick="openWonderModal('${w.name}')">
+      <div class="thumb">${w.icon}</div>
+      <div class="txt"><div class="t">${w.name}</div><div class="s">${w.desc}</div></div>
+      <div class="chev">›</div>
+    </div>`).join('');
+}
+function openWonderModal(name){
+  const w = WONDERS.find(x=>x.name===name);
+  document.getElementById('modalIcon').textContent = w.icon;
+  document.getElementById('modalKind').textContent = `Maravilla Natural · ${CONT_BY_ID[w.continent].name}`;
+  document.getElementById('modalTitle').textContent = w.name;
+  document.getElementById('modalBody').textContent = w.desc;
+  openModal();
+}
+
+/* ================= RENDER: MAPA INTERACTIVO ================= */
+function renderMap(){
+  const g = document.getElementById('mapPoints');
+  g.innerHTML = CONTINENTS.map(c=>{
+    const p = MAP_POS[c.id];
+    return `<circle cx="${p.x}" cy="${p.y}" r="6" fill="#D9A441" stroke="#0F1E2C" stroke-width="2" onclick="openContinent('${c.id}')"></circle>`;
+  }).join('');
+  const legend = document.getElementById('mapLegend');
+  legend.innerHTML = CONTINENTS.map(c=>`
+    <div class="card" onclick="openContinent('${c.id}')">
+      <div class="thumb">${c.icon}</div>
+      <div class="txt"><div class="t">${c.name}</div><div class="s">Toca para ver países</div></div>
+      <div class="chev">›</div>
+    </div>`).join('');
+}
+
+/* ================= BÚSQUEDA DINÁMICA ================= */
+function onSearch(){
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const results = document.getElementById('searchResults');
+  if(q.length===0){ results.innerHTML = `<div class="empty-state">Escribe el nombre de un país, continente o especie animal.</div>`; return; }
+
+  const countryHits = [];
+  CONTINENTS.forEach(c=>{
+    if(c.name.toLowerCase().includes(q)) countryHits.push({type:'continente', icon:c.icon, name:c.name, sub:'Continente', action:`openContinent('${c.id}')`});
+    c.countries.forEach((co,i)=>{
+      if(co.name.toLowerCase().includes(q) || co.cap.toLowerCase().includes(q)) {
+        countryHits.push({type:'país', icon:flagTag(co), name:co.name, sub:`País · ${c.name}`, action:`openCountryDetail('${c.id}',${i})`});
+      }
+    });
+  });
+  const faunaHits = FAUNA.filter(f=>f.name.toLowerCase().includes(q)).map(f=>(
+    {type:'fauna', icon:f.icon, name:f.name, sub:`Fauna · ${CONT_BY_ID[f.continent].name}`, action:`openFaunaModal('${f.name}')`}
+  ));
+  const wonderHits = WONDERS.filter(w=>w.name.toLowerCase().includes(q)).map(w=>(
+    {type:'maravilla', icon:w.icon, name:w.name, sub:`Maravilla · ${CONT_BY_ID[w.continent].name}`, action:`openWonderModal('${w.name}')`}
+  ));
+
+  const all = [...countryHits, ...faunaHits, ...wonderHits];
+  if(all.length===0){ results.innerHTML = `<div class="empty-state">Sin resultados para "${q}".</div>`; return; }
+  results.innerHTML = `<div class="card-row">` + all.map(r=>`
+    <div class="card" onclick="${r.action}">
+      <div class="thumb">${r.icon}</div>
+      <div class="txt"><div class="t">${r.name}</div><div class="s">${r.sub}</div></div>
+      <div class="chev">›</div>
+    </div>`).join('') + `</div>`;
+}
+
+/* ================= DRAWER / MODAL / TOAST ================= */
+function openDrawer(){ document.getElementById('drawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('open'); }
+function closeDrawer(){ document.getElementById('drawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('open'); }
+function openModal(){ document.getElementById('modalOverlay').classList.add('open'); }
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); }
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(window._toastT);
+  window._toastT = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+/* ================= INIT ================= */
+document.addEventListener('DOMContentLoaded', ()=>{
+  renderContinents();
+  renderFauna();
+  renderWonders();
+  renderMap();
+});
+</script>
+</body>
+</html>
